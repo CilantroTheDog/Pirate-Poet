@@ -4,6 +4,7 @@ module.exports = {
 	aliases: ['icon', 'pfp'],
 	args: true,
 	usage: '[username]',
+	// eslint-disable-next-line no-unused-vars
 	execute(message, args) {
 		if (!message.mentions.users.size) {
 			return message.channel.send(`Your avatar: <${message.author.displayAvatarURL}>`);

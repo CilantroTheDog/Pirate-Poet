@@ -2,11 +2,18 @@ module.exports = {
 	name: 'roll',
 	description: 'Rolls a certain amount of dice with a certain amount of faces',
 	args: true,
-	usage: '<dice faces> <dice amount>',
+	usage: '<dice>',
+	aliases: ['r'],
 	execute(message, args) {
 		let diceAmount = 1;
 		let diceFaces = 0;
 		let diceTotal = 0;
+
+		const diceArgs = args[0].trim().split(/d/g);
+
+		// Lazy Spaghetti
+		args[0] = diceArgs[1];
+		args[1] = diceArgs[0];
 
 		try {
 			if (isNaN(args[0])) {
@@ -15,7 +22,7 @@ module.exports = {
 			else {
 				diceFaces = parseInt(args[0]);
 			}
-			if (args[1] != null) {
+			if (args[1] != '') {
 				if (isNaN(args[1])) {
 					throw 'Dice2';
 				}
