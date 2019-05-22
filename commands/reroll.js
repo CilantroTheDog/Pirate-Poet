@@ -3,41 +3,39 @@ const lastRoll = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/D
 lastRoll.on('error', err => console.error('Keyv connection error:', err));
 
 module.exports = {
-	name: 'roll',
-	description: 'Rolls a certain amount of dice with a certain amount of faces',
+	name: 'reroll',
+	description: 'Rerolls certain values of the last roll',
 	args: true,
-	usage: '<dice>',
 	numerable: true,
-	aliases: ['r'],
+	usage: '[reroll value]',
 	execute(message, args) {
 		(async () => {
-			let diceAmount = 1;
-			let diceFaces = 0;
-			let diceTotal = 0;
+			const rollArray = await lastRoll.get(message.guild.id);
 
-			const diceArgs = args[0].trim().split(/d/g);
-
-			// Lazy Spaghetti
-			args[0] = diceArgs[1];
-			args[1] = diceArgs[0];
-
-			diceFaces = parseInt(args[0]);
-			if (args[1] != '') {
-				diceAmount = parseInt(args[1]);
+			if (rollArray == null) {
+				return message.channel.send(`You can not reroll when there is no last roll stored, ${message.author}`);
 			}
 
-			if (diceAmount <= 0 || diceFaces <= 0) {
-				message.channel.send('Error: One or multiple arguments are non-positive numbers');
-				return;
+			let total = 0;
+			const target = parseInt(args[0]);
+			const diceFaces = rollArray[rollArray.length - 1];
+
+			for (let i = 0; i < rollArray.length - 1; i++) {
+				if (rollArray[i] == target) {
+					total++;
+				}
 			}
-			else if (diceAmount >= 100000 || diceFaces >= 100000) {
-				message.channel.send('Please only use values less than 100,000.');
-				return;
+
+			if (total == 0) {
+				return message.channel.send(`There are no matching values for the number provided, ${message.author}`);
 			}
+
+			// Messy
 
 			const diceArray = [];
 			let diceTemp;
-			for (let i = 0; i < diceAmount; i++) {
+			let diceTotal = 0;
+			for (let i = 0; i < total; i++) {
 				diceTemp = Math.floor((Math.random() * diceFaces) + 1);
 				diceTotal += diceTemp;
 				diceArray.push(diceTemp);

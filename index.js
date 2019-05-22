@@ -7,7 +7,7 @@ const client = new Discord.Client();
 client.commands = new Discord.Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
-const prefixes = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/database.sqlite');
+const prefixes = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/prefix.sqlite');
 prefixes.on('error', err => console.error('Keyv connection error:', err));
 
 client.once('ready', () => {
@@ -71,11 +71,19 @@ client.on('message', async message => {
 		return message.channel.send(`This is an admin only command, ${message.author}`);
 	}
 
+	if (command.numerable) {
+		for (const temp in args) {
+			if (isNaN(temp)) {
+				return message.channel.send(`One of your arguments is not a number, ${message.author}`);
+			}
+		}
+	}
+
 	try {
 		command.execute(message, args);
 	}
 	catch (error) {
 		console.error(error);
-		message.reply('Error: Command not recognized');
+		message.reply('Something strange happened. Ask Cilantro why!');
 	}
 });

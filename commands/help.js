@@ -1,6 +1,6 @@
 const Keyv = require('keyv');
 const { globalprefix } = require('./../env.json');
-const prefixes = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/database.sqlite');
+const prefixes = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/prefix.sqlite');
 prefixes.on('error', err => console.error('Keyv connection error:', err));
 
 module.exports = {
