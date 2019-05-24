@@ -10,6 +10,15 @@ const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('
 const prefixes = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/prefix.sqlite');
 prefixes.on('error', err => console.error('Keyv connection error:', err));
 
+const blacklistRoles = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/blacklistRoles.sqlite');
+blacklistRoles.on('error', err => console.error('Keyv connection error:', err));
+
+const storedRoles = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/storedRoles.sqlite');
+storedRoles.on('error', err => console.error('Keyv connection error:', err));
+
+const assignRoles = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/assignRoles.sqlite');
+assignRoles.on('error', err => console.error('Keyv connection error:', err));
+
 client.once('ready', () => {
 	console.log('Ready to sail!');
 
@@ -67,7 +76,7 @@ client.on('message', async message => {
 		return message.channel.send(`This is a server only command, ${message.author}`);
 	}
 
-	if (message.guild && command.manageMessages && !message.member.hasPermission('MANAGE_MESSAGES')) {
+	if (command.manageMessages && !message.member.hasPermission('MANAGE_MESSAGES')) {
 		return message.channel.send(`This is an admin only command, ${message.author}`);
 	}
 
@@ -79,11 +88,111 @@ client.on('message', async message => {
 		}
 	}
 
+	if (command.manageRoles && !message.member.hasPermission('MANAGE_ROLES')) {
+		return message.channel.send(`This is an admin only command, ${message.author}`);
+	}
+
+	if (command.blacklist) {
+		const roleArray = await blacklistRoles.get(message.guild.id);
+
+		if (roleArray != null) {
+			for (let i = 0; i < roleArray.length; i++) {
+				if (message.member.roles.some(role => role.name === roleArray[i])) {
+					return message.channel.send(`You have a blacklisted role, you are not allowed to use this command, ${message.author}`);
+				}
+			}
+		}
+	}
+
 	try {
 		command.execute(message, args);
 	}
 	catch (error) {
 		console.error(error);
 		message.reply('Something strange happened. Ask Cilantro why!');
+	}
+});
+
+client.on('guildMemberUpdate', async (oldMember, newMember) => {
+	const oldRoles = oldMember.roles.array();
+	const newRoles = newMember.roles.array();
+	const blacklistArray = await blacklistRoles.get(newMember.guild.id);
+	let blacklist = false;
+
+	const roleArray = await assignRoles.get(oldMember.guild.id);
+	let storedArray = await storedRoles.get(newMember.guild.id + newMember.id);
+
+	// This means a new role was added to a user
+	if (blacklistArray != null && oldMember.roles.size < newMember.roles.size) {
+		let newRole;
+
+		// Searchs to find the new role
+		for (let i = 0; i < newRoles.length; i++) {
+			for (let j = 0; j < oldRoles.length; j++) {
+				if (oldRoles[j] == newRoles[i]) {
+					break;
+				}
+				else if (j == oldRoles.length - 1) {
+					newRole = newRoles[i];
+				}
+			}
+		}
+
+		// Checks to see if it was a blacklisted role
+		for (let i = 0; i < blacklistArray.length; i++) {
+			if (newRole.name == blacklistArray[i]) {
+				blacklist = true;
+			}
+		}
+
+		if (blacklist) {
+			if (storedArray == null) {
+				storedArray = [];
+			}
+
+			// Removes self assignable roles
+			for (let i = 0; i < roleArray.length; i++) {
+				if (newMember.roles.some(role => role.name === roleArray[i])) {
+					const roleName = newMember.guild.roles.find(role => role.name === roleArray[i]);
+					newMember.removeRole(roleName);
+					storedArray.push(roleArray[i]);
+				}
+			}
+
+			await storedRoles.set(newMember.guild.id + newMember.id, storedArray);
+		}
+	// This means a role was removed from a user
+	}
+	else if (oldMember.roles.size > newMember.roles.size && blacklistArray != null && storedArray != null) {
+		let oldRole;
+
+		// Searchs to find the removed role
+		for (let i = 0; i < oldRoles.length; i++) {
+			for (let j = 0; j < newRoles.length; j++) {
+				if (oldRoles[i] == newRoles[j]) {
+					break;
+				}
+				else if (j == newRoles.length - 1) {
+					oldRole = oldRoles[i];
+				}
+			}
+		}
+
+		// Checks to see if it was a blacklist role
+		for (let i = 0; i < blacklistArray.length; i++) {
+			if (oldRole.name == blacklistArray[i]) {
+				blacklist = true;
+			}
+		}
+
+		if (blacklist) {
+			// Adds self assignable roles again
+			for (let i = 0; i < storedArray.length; i++) {
+				const roleName = newMember.guild.roles.find(role => role.name === storedArray[i]);
+				newMember.addRole(roleName);
+			}
+
+			await storedRoles.set(newMember.guild.id + newMember.id, null);
+		}
 	}
 });
