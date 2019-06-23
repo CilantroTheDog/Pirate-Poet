@@ -91,7 +91,7 @@ module.exports = {
 				}
 				else {
 					i++;
-					while (args[i][args[i].length - 1] == '"') {
+					while (args[i] != null && args[i][args[i].length - 1] == '"') {
 						command = command + ' ' + args[i];
 						i++;
 					}

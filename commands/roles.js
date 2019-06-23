@@ -1,6 +1,9 @@
 const Keyv = require('keyv');
+const Discord = require('discord.js');
+const { globalprefix } = require('./../env.json');
 const assignRoles = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/assignRoles.sqlite');
 const assignNames = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/assignNames.sqlite');
+const prefixes = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/prefix.sqlite');
 assignRoles.on('error', err => console.error('Keyv connection error:', err));
 assignNames.on('error', err => console.error('Keyv connection error:', err));
 
@@ -18,15 +21,29 @@ module.exports = {
 				return message.channel.send(`There are no roles to subscribe to, ${message.author}`);
 			}
 
-			let roleString = '```fix';
+			let prefix;
 
-			for (let i = 0; i < roleArray.length; i++) {
-				roleString = roleString + '\n' + roleArray[i] + ' | ' + nameArray[i];
+			const guildPrefix = await prefixes.get(message.guild.id);
+
+			if (guildPrefix != null && guildPrefix != globalprefix) {
+				prefix = guildPrefix;
+			}
+			else {
+				prefix = globalprefix;
 			}
 
-			roleString = roleString + '\n```';
+			const roleEmbed = new Discord.RichEmbed()
+				.setColor('#0F524B')
+				.setTitle('Roles List')
+				.setDescription('The roles you can subscribe to, and what command you use to acquire them.')
+				.setThumbnail('https://i.imgur.com/5LuI0Wt.png')
+				.setTimestamp();
 
-			return message.channel.send(`The roles for this server can be found below. The first name in a row is the role, while the second name is the command you can use to recieve that role.\n` + roleString);
+			for (let i = 0; i < roleArray.length; i++) {
+				roleEmbed.addField(roleArray[i], `\`${prefix}sub ${nameArray[i]}\``, true);
+			}
+
+			message.channel.send(roleEmbed);
 		})();
 	},
 };
