@@ -91,12 +91,11 @@ module.exports = {
 				}
 				else {
 					i++;
-					while (args[i] != null && args[i][args[i].length - 1] == '"') {
+					while (args[i] != null && args[i][args[i].length - 1] != '"') {
 						command = command + ' ' + args[i];
 						i++;
 					}
 					command = command + ' ' + args[i].slice(0, args[i].length - 1);
-					i++;
 				}
 			}
 

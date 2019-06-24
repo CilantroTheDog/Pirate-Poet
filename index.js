@@ -109,7 +109,7 @@ client.on('message', async message => {
 	}
 	catch (error) {
 		console.error(error);
-		message.reply('Something strange happened. Ask Cilantro why!');
+		message.reply('Something unexpected happened. Ask Cilantro why!');
 	}
 });
 

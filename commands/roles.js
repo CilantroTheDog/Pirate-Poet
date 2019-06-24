@@ -4,6 +4,7 @@ const { globalprefix } = require('./../env.json');
 const assignRoles = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/assignRoles.sqlite');
 const assignNames = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/assignNames.sqlite');
 const prefixes = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/prefix.sqlite');
+const descriptionKeys = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/description.sqlite');
 assignRoles.on('error', err => console.error('Keyv connection error:', err));
 assignNames.on('error', err => console.error('Keyv connection error:', err));
 
@@ -16,9 +17,16 @@ module.exports = {
 		(async () => {
 			const roleArray = await assignRoles.get(message.guild.id);
 			const nameArray = await assignNames.get(message.guild.id);
+			const descriptionArray = await descriptionKeys.get(message.guild.id);
+
+			let empty = false;
 
 			if (roleArray == null || nameArray == null) {
 				return message.channel.send(`There are no roles to subscribe to, ${message.author}`);
+			}
+
+			if (descriptionArray == null) {
+				empty = true;
 			}
 
 			let prefix;
@@ -40,7 +48,25 @@ module.exports = {
 				.setTimestamp();
 
 			for (let i = 0; i < roleArray.length; i++) {
-				roleEmbed.addField(roleArray[i], `\`${prefix}sub ${nameArray[i]}\``, true);
+				if (!empty) {
+					let descriptionIndex = -1;
+					for (let j = 0; j < descriptionArray.length; j++) {
+						if (roleArray[i] == descriptionArray[j][0]) {
+							descriptionIndex = i;
+							break;
+						}
+					}
+
+					if (descriptionIndex == -1) {
+						roleEmbed.addField(roleArray[i], `\`${prefix}sub ${nameArray[i]}\``, true);
+					}
+					else {
+						roleEmbed.addField(roleArray[i], `${descriptionArray[descriptionIndex][1]}\n\`${prefix}sub ${nameArray[i]}\``, true);
+					}
+				}
+				else {
+					roleEmbed.addField(roleArray[i], `\`${prefix}sub ${nameArray[i]}\``, true);
+				}
 			}
 
 			message.channel.send(roleEmbed);
