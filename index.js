@@ -196,3 +196,16 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
 		}
 	}
 });
+
+client.on('messageReactionAdd', async (messageReaction) => {
+	const message = messageReaction.message;
+	if (messageReaction.emoji.name === '📌' && message.pinned == false) {
+		const emojiArray = message.reactions.array();
+		for (let i = 0; i < emojiArray.length; i++) {
+			if (emojiArray[i].emoji.name === '📌' && emojiArray[i].count > 1) {
+				message.pin();
+				break;
+			}
+		}
+	}
+});

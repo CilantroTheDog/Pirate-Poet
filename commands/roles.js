@@ -52,7 +52,7 @@ module.exports = {
 					let descriptionIndex = -1;
 					for (let j = 0; j < descriptionArray.length; j++) {
 						if (roleArray[i] == descriptionArray[j][0]) {
-							descriptionIndex = i;
+							descriptionIndex = j;
 							break;
 						}
 					}

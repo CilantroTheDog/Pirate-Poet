@@ -7,6 +7,7 @@ module.exports = {
 	description: 'Adds a description to a self assignable role',
 	guildOnly: true,
 	usage: '[description]',
+	manageRoles: true,
 	// eslint-disable-next-line no-unused-vars
 	execute(message, args) {
 		(async () => {
