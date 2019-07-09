@@ -213,3 +213,43 @@ client.on('messageReactionAdd', async (messageReaction) => {
 		}
 	}
 });
+
+client.on('channelPinsUpdate', async channel => {
+	if (!channel.guild) {
+		return;
+	}
+
+	let is50 = false;
+	const guildPrefix = await prefixes.get(channel.guild.id);
+
+	channel.fetchPinnedMessages()
+		.then(messages => {
+			if (messages == null) {
+				return;
+			}
+			else if (messages.size == 50) {
+				is50 = true;
+			}
+		})
+		.then(() => {
+			if (!is50) {
+				return;
+			}
+
+			const dummyMessage = new Discord.Message();
+
+			dummyMessage.channel = channel;
+			dummyMessage.guild = channel.guild;
+
+			const prefix = guildPrefix ? guildPrefix : globalprefix;
+
+			dummyMessage.content = `${prefix}pinvent 50`;
+
+			const args = dummyMessage.content.slice(prefix.length).split(/ +/);
+			const commandName = args.shift().toLowerCase();
+
+			const command = client.commands.get(commandName) || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
+
+			command.execute(dummyMessage, args);
+		});
+});

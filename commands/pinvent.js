@@ -95,7 +95,7 @@ module.exports = {
 						pinnedMessage.unpin();
 					}
 
-					return message.channel.send(`${args[0]} messages were unpinned and sent to ${pinChannel}, ${message.author}`);
+					return message.channel.send(`${args[0]} messages were unpinned and sent to ${pinChannel}`);
 				});
 		})();
 	},
