@@ -66,7 +66,7 @@ module.exports = {
 						startIndex = pinnedMessageArray.length - 1 - args[1];
 					}
 
-					let endIndex = startIndex - args[0];
+					const endIndex = startIndex - args[0];
 					let messageEmbed;
 					for (i = startIndex; i > endIndex; i--) {
 						if (i < 0) {
@@ -75,14 +75,6 @@ module.exports = {
 
 						pinnedMessage = pinnedMessageArray[i];
 
-						console.log(pinnedMessageArray[i] == null + `${i}`);
-						console.log(pinnedMessage.attachments != null + `${i}`);
-
-						if (pinnedMessage.attachments.array().length > 0) {
-							endIndex--;
-							continue;
-						}
-
 						messageEmbed = new Discord.RichEmbed()
 							.setColor()
 							.setTitle(pinnedMessage.author.username)
@@ -90,7 +82,16 @@ module.exports = {
 							.setThumbnail(pinnedMessage.author.avatarURL)
 							.setTimestamp(pinnedMessage.createdAt)
 							.addField('Message Link', `[Link](${pinnedMessage.url})`);
+
+						if (pinnedMessage.attachments.array().length > 0) {
+							pinnedMessage.attachments.forEach(attachment => {
+								console.log(attachment.url);
+								messageEmbed.setImage(attachment.url);
+							});
+						}
+
 						pinChannel.send(messageEmbed);
+
 						pinnedMessage.unpin();
 					}
 
