@@ -58,14 +58,14 @@ module.exports = {
 					}
 
 					if (descriptionIndex == -1) {
-						roleEmbed.addField(roleArray[i], `\`${prefix}sub ${nameArray[i]}\``, true);
+						roleEmbed.addField(roleArray[i], `\`${prefix}sub ${nameArray[i]}\``);
 					}
 					else {
-						roleEmbed.addField(roleArray[i], `${descriptionArray[descriptionIndex][1]}\n\`${prefix}sub ${nameArray[i]}\``, true);
+						roleEmbed.addField(roleArray[i], `${descriptionArray[descriptionIndex][1]}\n\`${prefix}sub ${nameArray[i]}\``);
 					}
 				}
 				else {
-					roleEmbed.addField(roleArray[i], `\`${prefix}sub ${nameArray[i]}\``, true);
+					roleEmbed.addField(roleArray[i], `\`${prefix}sub ${nameArray[i]}\``);
 				}
 			}
 

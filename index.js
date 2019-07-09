@@ -80,6 +80,10 @@ client.on('message', async message => {
 		return message.channel.send(`This is an admin only command, ${message.author}`);
 	}
 
+	if (command.ownerOnly && message.author.id != 98909339263184896) {
+		return message.channel.send(`This is a command only for testing, only the bot's owner can use it, ${message.author}`);
+	}
+
 	if (command.numerable) {
 		for (const temp in args) {
 			if (isNaN(temp)) {
@@ -202,7 +206,7 @@ client.on('messageReactionAdd', async (messageReaction) => {
 	if (messageReaction.emoji.name === '📌' && message.pinned == false) {
 		const emojiArray = message.reactions.array();
 		for (let i = 0; i < emojiArray.length; i++) {
-			if (emojiArray[i].emoji.name === '📌' && emojiArray[i].count > 1) {
+			if (emojiArray[i].emoji.name === '📌' && emojiArray[i].count > 2) {
 				message.pin();
 				break;
 			}
