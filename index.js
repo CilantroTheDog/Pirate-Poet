@@ -19,6 +19,9 @@ storedRoles.on('error', err => console.error('Keyv connection error:', err));
 const assignRoles = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/assignRoles.sqlite');
 assignRoles.on('error', err => console.error('Keyv connection error:', err));
 
+const channelStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/channelRoles.sqlite');
+channelStorage.on('error', err => console.error('Keyv connection error:', err));
+
 client.once('ready', () => {
 	console.log('Ready to sail!');
 
@@ -123,11 +126,11 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
 	const blacklistArray = await blacklistRoles.get(newMember.guild.id);
 	let blacklist = false;
 
-	const roleArray = await assignRoles.get(oldMember.guild.id);
+	const roleArray = await channelStorage.get(oldMember.guild.id);
 	let storedArray = await storedRoles.get(newMember.guild.id + newMember.id);
 
 	// This means a new role was added to a user
-	if (blacklistArray != null && oldMember.roles.size < newMember.roles.size) {
+	if (blacklistArray != null && roleArray != null && oldMember.roles.size < newMember.roles.size) {
 		let newRole;
 
 		// Searchs to find the new role

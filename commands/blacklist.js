@@ -32,7 +32,7 @@ module.exports = {
 			let roleIndex = -1;
 
 			if (!empty) {
-				for (let i = 0; i < roleArray.length - 1; i++) {
+				for (let i = 0; i < roleArray.length; i++) {
 					if (roleName == roleArray[i]) {
 						roleIndex = i;
 						break;
@@ -44,6 +44,16 @@ module.exports = {
 				roleArray.push(roleName);
 				await blacklistRoles.set(message.guild.id, roleArray);
 				return message.channel.send(`The role ${roleName} has been added to the blacklist. Users with this role will no longer be able to subscribe to self assignable roles.`);
+			}
+			else {
+				roleArray.splice(roleIndex, 1);
+				if (roleArray.length == 0) {
+					await blacklistRoles.set(message.guild.id, null);
+				}
+				else {
+					await blacklistRoles.set(message.guild.id, roleArray);
+				}
+				return message.channel.send(`The role ${roleName} is no longer blacklisted`);
 			}
 		})();
 	},
