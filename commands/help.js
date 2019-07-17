@@ -41,15 +41,17 @@ module.exports = {
 				helpEmbed.setTitle('Commands List');
 
 				for (let i = 0; i < commandArray.length; i++) {
-					helpEmbed.addField(commandArray[i].name, commandArray[i].description);
+					if (!commandArray[i].hidden) {
+						helpEmbed.addField(commandArray[i].name, commandArray[i].description);
+					}
 				}
 			}
 			else {
 				const name = args[0].toLowerCase();
 				const command = commands.get(name) || commands.find(c => c.aliases && c.aliases.includes(name));
 
-				if (!command) {
-					return message.reply('that\'s not a valid command!');
+				if (!command || command.hidden) {
+					return message.reply('That\'s not a valid command.');
 				}
 
 				helpEmbed.setTitle(command.name);
