@@ -85,7 +85,6 @@ module.exports = {
 
 						if (pinnedMessage.attachments.array().length > 0) {
 							pinnedMessage.attachments.forEach(attachment => {
-								console.log(attachment.url);
 								messageEmbed.setImage(attachment.url);
 							});
 						}
@@ -94,8 +93,7 @@ module.exports = {
 
 						pinnedMessage.unpin();
 					}
-
-					return message.channel.send(`${args[0]} messages were unpinned and sent to ${pinChannel}`);
+					// return message.channel.send(`${args[0]} messages were unpinned and sent to ${pinChannel}`);
 				});
 		})();
 	},

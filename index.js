@@ -246,7 +246,7 @@ client.on('channelPinsUpdate', async channel => {
 
 			const prefix = guildPrefix ? guildPrefix : globalprefix;
 
-			dummyMessage.content = `${prefix}pinvent 50`;
+			dummyMessage.content = `${prefix}pinvent 1`;
 
 			const args = dummyMessage.content.slice(prefix.length).split(/ +/);
 			const commandName = args.shift().toLowerCase();
