@@ -1,12 +1,19 @@
 const Discord = require('discord.js');
 const Keyv = require('keyv');
+const globalprefix = '~';
 const pinChannelStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/pinChannel.sqlite');
 pinChannelStorage.on('error', err => console.error('Keyv connection error:', err));
+
+const pinRetainEmoteStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/pinRetainEmote.sqlite');
+pinRetainEmoteStorage.on('error', err => console.error('Keyv connection error:', err));
+
+const prefixes = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/prefix.sqlite');
+prefixes.on('error', err => console.error('Keyv connection error:', err));
 
 module.exports = {
 	name: 'pinvent',
 	description: 'Vents pinned messages automatically, posting them in the specified channel',
-	usage: '[message vent amount] [message skip ammount (Optional)]',
+	usage: '[message vent amount] [message skip amount (Optional)]',
 	args: true,
 	guildOnly: true,
 	numerable: true,
@@ -15,12 +22,18 @@ module.exports = {
 	execute(message, args) {
 		(async () => {
 			const pinChannelName = await pinChannelStorage.get(message.guild.id);
+			const pinRetainEmojiObject = await pinRetainEmoteStorage.get(message.guild.id);
+			const guildPrefix = await prefixes.get(message.guild.id);
+			const pinnedMessageArray = [];
+
+			let i, pinnedMessage, startIndex, normalMessage, messageReaction, pinID;
+			let noSkip = false;
+			let recurse = false;
+			let adminUser = false;
 
 			if (pinChannelName == null) {
 				return message.channel.send(`Please make sure you set a channel to post pinned messages, using the setpinchannel command, ${message.author}`);
 			}
-
-			let noSkip = false;
 
 			if (args[1] == null) {
 				noSkip = true;
@@ -28,73 +41,94 @@ module.exports = {
 
 			const pinChannel = message.guild.channels.find(channel => channel.name === pinChannelName);
 
-			const pinnedMessageArray = [];
-			message.channel.fetchPinnedMessages()
-				.then(messages => {
-					if (messages == null) {
-						return message.channel.send(`Please make sure this channel has pinned messages, ${message.author}`);
-					}
-					messages.forEach(pinMessage => {
-						pinnedMessageArray.push(pinMessage);
-					});
-				})
-				.then(i => {
-					let minIndex;
-					let firstMessageDate;
-					let secondMessageDate;
-					let temp;
-					for (i = 0; i < pinnedMessageArray.length - 2; i++) {
-						minIndex = i;
-						for (let j = 1; j < pinnedMessageArray.length - 1; j++) {
-							firstMessageDate = pinnedMessageArray[j].createdAt;
-							secondMessageDate = pinnedMessageArray[minIndex].createdAt;
-							if (firstMessageDate.getTime() < secondMessageDate.getTime()) {
-								minIndex = j;
-							}
-						}
-						temp = pinnedMessageArray[i];
-						pinnedMessageArray[i] = pinnedMessageArray[minIndex];
-						pinnedMessageArray[minIndex] = temp;
-					}
+			const messages = await message.channel.fetchPinnedMessages();
 
-					let pinnedMessage;
-					let startIndex;
-					if (noSkip) {
-						startIndex = pinnedMessageArray.length - 1;
+			if (messages == null) {
+				return message.channel.send(`Please make sure this channel has pinned messages, ${message.author}`);
+			}
+			messages.forEach(pinMessage => {
+				pinnedMessageArray.push(pinMessage);
+			});
+
+			pinnedMessageArray.sort(function(a, b) {
+				return b.createdAt.getTime() - a.createdAt.getTime();
+			});
+
+			if (noSkip) {
+				startIndex = pinnedMessageArray.length - 1;
+			}
+			else {
+				startIndex = pinnedMessageArray.length - 1 - args[1];
+			}
+
+			const endIndex = startIndex - args[0];
+			for (i = startIndex; i > endIndex; i--) {
+				if (i < 0) {
+					break;
+				}
+
+				pinnedMessage = pinnedMessageArray[i];
+
+				if (pinRetainEmojiObject != null) {
+					pinID = pinnedMessage.id;
+					pinnedMessage.channel.messages.delete(pinID);
+					normalMessage = await pinnedMessage.channel.fetchMessage(pinID);
+
+					if (pinRetainEmojiObject.isCustom) {
+						messageReaction = normalMessage.reactions.find(reaction => reaction.emoji.id === pinRetainEmojiObject.emoji.id);
 					}
 					else {
-						startIndex = pinnedMessageArray.length - 1 - args[1];
+						messageReaction = normalMessage.reactions.find(reaction => reaction.emoji.name === pinRetainEmojiObject.emoji);
 					}
 
-					const endIndex = startIndex - args[0];
-					let messageEmbed;
-					for (i = startIndex; i > endIndex; i--) {
-						if (i < 0) {
-							break;
-						}
-
-						pinnedMessage = pinnedMessageArray[i];
-
-						messageEmbed = new Discord.RichEmbed()
-							.setColor()
-							.setTitle(pinnedMessage.author.username)
-							.setDescription(pinnedMessage.content)
-							.setThumbnail(pinnedMessage.author.avatarURL)
-							.setTimestamp(pinnedMessage.createdAt)
-							.addField('Message Link', `[Link](${pinnedMessage.url})`);
-
-						if (pinnedMessage.attachments.array().length > 0) {
-							pinnedMessage.attachments.forEach(attachment => {
-								messageEmbed.setImage(attachment.url);
-							});
-						}
-
-						pinChannel.send(messageEmbed);
-
-						pinnedMessage.unpin();
+					if (messageReaction != null) {
+						recurse = true;
+						const users = await messageReaction.fetchUsers();
+						users.forEach(tempUser => {
+							if (normalMessage.guild.members.find(guildmember => guildmember.user.id === tempUser.id).hasPermission('MANAGE_MESSAGES')) {
+								adminUser = true;
+							}
+						});
 					}
-					// return message.channel.send(`${args[0]} messages were unpinned and sent to ${pinChannel}`);
-				});
+
+					if (recurse && adminUser) {
+						const dummyMessage = new Discord.Message();
+
+						dummyMessage.channel = normalMessage.channel;
+						dummyMessage.guild = normalMessage.channel.guild;
+
+						const prefix = guildPrefix ? guildPrefix : globalprefix;
+
+						dummyMessage.content = `${prefix}pinvent ${startIndex - endIndex} 1`;
+
+						const args2 = dummyMessage.content.slice(prefix.length).split(/ +/);
+						args2.shift().toLowerCase();
+
+						return module.exports.execute(dummyMessage, args2);
+					}
+				}
+				else {
+					normalMessage = pinnedMessage;
+				}
+
+				const messageEmbed = new Discord.RichEmbed()
+					.setColor()
+					.setTitle(normalMessage.author.username)
+					.setDescription(normalMessage.content)
+					.setThumbnail(normalMessage.author.avatarURL)
+					.setTimestamp(normalMessage.createdAt)
+					.addField('Message Link', `[Link](${normalMessage.url})`);
+
+				if (normalMessage.attachments.array().length > 0) {
+					normalMessage.attachments.forEach(attachment => {
+						messageEmbed.setImage(attachment.url);
+					});
+				}
+
+				pinChannel.send(messageEmbed);
+
+				normalMessage.unpin();
+			}
 		})();
 	},
 };
