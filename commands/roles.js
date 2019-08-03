@@ -15,7 +15,9 @@ module.exports = {
 	// eslint-disable-next-line no-unused-vars
 	execute(message, args) {
 		(async () => {
-			const roleArray = await assignRoles.get(message.guild.id);
+			const roleArray = (await assignRoles.get(message.guild.id)).sort(function(a, b) {
+				return a.localeCompare(b);
+			});
 			const nameArray = await assignNames.get(message.guild.id);
 			const descriptionArray = await descriptionKeys.get(message.guild.id);
 

@@ -124,9 +124,10 @@ client.on('message', async message => {
 				if (customEmojiRegex.test(args[temp])) {
 					const parts = args[temp].split(/:/);
 					parts[2] = parts[2].slice(0, parts[2].length - 1);
-					if (!message.guild.emojis.has(parts[2])) {
+					if (!client.emojis.get(parts[2])) {
 						return message.channel.send(`One of your arguments is not an emoji, ${message.author}`);
 					}
+					args.push(client);
 				}
 				else {
 					return message.channel.send(`One of your arguments is not an emoji, ${message.author}`);
