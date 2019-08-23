@@ -25,10 +25,6 @@ module.exports = {
 				roleName = roleName + ' ' + args[i];
 			}
 
-			if (message.guild.roles.find(role => role.name === roleName) == null) {
-				return message.channel.send(`Please make sure your role exists in this server, ${message.author}`);
-			}
-
 			let roleIndex = -1;
 
 			for (let i = 0; i < roleArray.length; i++) {
@@ -36,6 +32,10 @@ module.exports = {
 					roleIndex = i;
 					break;
 				}
+			}
+
+			if (message.guild.roles.find(role => role.name === roleName) == null && roleIndex == -1) {
+				return message.channel.send(`Please make sure your role exists in this server, ${message.author}`);
 			}
 
 			if (roleIndex == -1) {

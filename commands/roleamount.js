@@ -32,9 +32,6 @@ module.exports = {
 				embedString += `**${roleArray[i]}**: ${roleAmount}`;
 			}
 
-
-			console.log(embedString);
-
 			const roleEmbed = new Discord.RichEmbed()
 				.setColor('#0F524B')
 				.setTitle('Role Amount List')
