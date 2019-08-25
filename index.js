@@ -25,6 +25,12 @@ channelStorage.on('error', err => console.error('Keyv connection error:', err));
 const pinEmoteStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/pinEmote.sqlite');
 pinEmoteStorage.on('error', err => console.error('Keyv connection error:', err));
 
+const pinRetainEmoteStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/pinRetainEmote.sqlite');
+pinRetainEmoteStorage.on('error', err => console.error('Keyv connection error:', err));
+
+const infoPinStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/infoPins.sqlite');
+infoPinStorage.on('error', err => console.error('Keyv connection error:', err));
+
 const welcomeChannelStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/welcomeChannel.sqlite');
 welcomeChannelStorage.on('error', err => console.error('Keyv connection error:', err));
 
@@ -248,7 +254,13 @@ client.on('messageReactionAdd', async (messageReaction) => {
 	const message = messageReaction.message;
 
 	const pinEmojiObject = await pinEmoteStorage.get(message.guild.id);
+	const retainEmojiObject = await pinRetainEmoteStorage.get(message.guild.id);
+	let infoPinsArray = await infoPinStorage.get(message.guild.id);
 	let shouldPin = false;
+
+	if (infoPinsArray == null) {
+		infoPinsArray = [];
+	}
 
 	if (pinEmojiObject != null) {
 		if (pinEmojiObject.isCustom) {
@@ -278,6 +290,39 @@ client.on('messageReactionAdd', async (messageReaction) => {
 			}
 		}
 	}
+
+	if (retainEmojiObject != null) {
+		if (retainEmojiObject.isCustom) {
+			shouldPin = (message.reactions.find(reaction => reaction.emoji.id === retainEmojiObject.emoji.id) != null) ? true : false;
+
+			if (shouldPin && message.pinned == false) {
+				const emojiArray = message.reactions.array();
+				for (let i = 0; i < emojiArray.length; i++) {
+					if (emojiArray[i].emoji.id === retainEmojiObject.emoji.id && emojiArray[i].count > 2) {
+						infoPinsArray.push(message.id);
+						await infoPinStorage.set(message.guild.id, infoPinsArray);
+						message.pin();
+						break;
+					}
+				}
+			}
+		}
+		else {
+			shouldPin = (message.reactions.find(reaction => reaction.emoji.name === retainEmojiObject.emoji) != null) ? true : false;
+
+			if (shouldPin && message.pinned == false) {
+				const emojiArray = message.reactions.array();
+				for (let i = 0; i < emojiArray.length; i++) {
+					if (emojiArray[i].emoji.name === retainEmojiObject.emoji && emojiArray[i].count > 2) {
+						infoPinsArray.push(message.id);
+						await infoPinStorage.set(message.guild.id, infoPinsArray);
+						message.pin();
+						break;
+					}
+				}
+			}
+		}
+	}
 });
 
 client.on('channelPinsUpdate', async channel => {
@@ -286,7 +331,24 @@ client.on('channelPinsUpdate', async channel => {
 	}
 
 	let is50 = false;
+	const infoPinsArray = await infoPinStorage.get(channel.guild.id);
 	const guildPrefix = await prefixes.get(channel.guild.id);
+
+	if (infoPinsArray != null) {
+		for (let i = 0; i < infoPinsArray.length; i++) {
+			const pinnedMessage = await channel.fetchMessage(infoPinsArray[i]);
+
+			if (pinnedMessage.pinned == false) {
+				infoPinsArray.splice(i, 1);
+				if (infoPinsArray.length == 0) {
+					await infoPinStorage.set(channel.guild.id, null);
+				}
+				else {
+					await infoPinStorage.set(channel.guild.id, infoPinsArray);
+				}
+			}
+		}
+	}
 
 	channel.fetchPinnedMessages()
 		.then(messages => {

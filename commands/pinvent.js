@@ -7,6 +7,9 @@ pinChannelStorage.on('error', err => console.error('Keyv connection error:', err
 const pinRetainEmoteStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/pinRetainEmote.sqlite');
 pinRetainEmoteStorage.on('error', err => console.error('Keyv connection error:', err));
 
+const infoPinStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/infoPins.sqlite');
+infoPinStorage.on('error', err => console.error('Keyv connection error:', err));
+
 const prefixes = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/prefix.sqlite');
 prefixes.on('error', err => console.error('Keyv connection error:', err));
 
@@ -24,12 +27,12 @@ module.exports = {
 			const pinChannelName = await pinChannelStorage.get(message.guild.id);
 			const pinRetainEmojiObject = await pinRetainEmoteStorage.get(message.guild.id);
 			const guildPrefix = await prefixes.get(message.guild.id);
+			const infoPinsArray = await infoPinStorage.get(message.guild.id);
 			const pinnedMessageArray = [];
 
-			let i, pinnedMessage, startIndex, normalMessage, messageReaction, pinID;
+			let i, j, pinnedMessage, startIndex;
 			let noSkip = false;
 			let recurse = false;
-			let adminUser = false;
 
 			if (pinChannelName == null) {
 				return message.channel.send(`Please make sure you set a channel to post pinned messages, using the setpinchannel command, ${message.author}`);
@@ -69,33 +72,20 @@ module.exports = {
 
 				pinnedMessage = pinnedMessageArray[i];
 
-				if (pinRetainEmojiObject != null) {
-					pinID = pinnedMessage.id;
-					pinnedMessage.channel.messages.delete(pinID);
-					normalMessage = await pinnedMessage.channel.fetchMessage(pinID);
+				if (pinRetainEmojiObject != null && infoPinsArray != null) {
+					for (j = 0; j < infoPinsArray.length; j++) {
+						const differentMessage = await pinnedMessage.channel.fetchMessage(infoPinsArray[j]);
 
-					if (pinRetainEmojiObject.isCustom) {
-						messageReaction = normalMessage.reactions.find(reaction => reaction.emoji.id === pinRetainEmojiObject.emoji.id);
-					}
-					else {
-						messageReaction = normalMessage.reactions.find(reaction => reaction.emoji.name === pinRetainEmojiObject.emoji);
+						if (differentMessage.id == pinnedMessage.id) {
+							recurse = true;
+						}
 					}
 
-					if (messageReaction != null) {
-						recurse = true;
-						const users = await messageReaction.fetchUsers();
-						users.forEach(tempUser => {
-							if (normalMessage.guild.members.find(guildmember => guildmember.user.id === tempUser.id).hasPermission('MANAGE_MESSAGES')) {
-								adminUser = true;
-							}
-						});
-					}
-
-					if (recurse && adminUser) {
+					if (recurse) {
 						const dummyMessage = new Discord.Message();
 
-						dummyMessage.channel = normalMessage.channel;
-						dummyMessage.guild = normalMessage.channel.guild;
+						dummyMessage.channel = pinnedMessage.channel;
+						dummyMessage.guild = pinnedMessage.channel.guild;
 
 						const prefix = guildPrefix ? guildPrefix : globalprefix;
 
@@ -107,27 +97,24 @@ module.exports = {
 						return module.exports.execute(dummyMessage, args2);
 					}
 				}
-				else {
-					normalMessage = pinnedMessage;
-				}
 
 				const messageEmbed = new Discord.RichEmbed()
 					.setColor()
-					.setTitle(normalMessage.author.username)
-					.setDescription(normalMessage.content)
-					.setThumbnail(normalMessage.author.avatarURL)
-					.setTimestamp(normalMessage.createdAt)
-					.addField('Message Link', `[Link](${normalMessage.url})`);
+					.setTitle(pinnedMessage.author.username)
+					.setDescription(pinnedMessage.content)
+					.setThumbnail(pinnedMessage.author.avatarURL)
+					.setTimestamp(pinnedMessage.createdAt)
+					.addField('Message Link', `[Link](${pinnedMessage.url})`);
 
-				if (normalMessage.attachments.array().length > 0) {
-					normalMessage.attachments.forEach(attachment => {
+				if (pinnedMessage.attachments.array().length > 0) {
+					pinnedMessage.attachments.forEach(attachment => {
 						messageEmbed.setImage(attachment.url);
 					});
 				}
 
 				pinChannel.send(messageEmbed);
 
-				normalMessage.unpin();
+				pinnedMessage.unpin();
 			}
 		})();
 	},
