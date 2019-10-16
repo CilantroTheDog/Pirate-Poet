@@ -40,6 +40,9 @@ exitChannelStorage.on('error', err => console.error('Keyv connection error:', er
 const welcomeStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/welcomeMessage.sqlite');
 welcomeStorage.on('error', err => console.error('Keyv connection error:', err));
 
+const assignNamesStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/assignNames.sqlite');
+assignNamesStorage.on('error', err => console.error('Keyv connection error:', err));
+
 const exitStorage = new Keyv('sqlite://C:/Users/Administrator/Desktop/Pirate_Poet/Database/exitMessage.sqlite');
 exitStorage.on('error', err => console.error('Keyv connection error:', err));
 
@@ -50,10 +53,17 @@ const emojiRegex = /\ud83d\udc68\u200d\u2764\ufe0f\u200d\ud83d\udc8b\u200d\ud83d
 const customEmojiRegex = /^<:\w+:[0-9]+>$/;
 
 client.once('ready', () => {
-	console.log('Ready to sail!');
+	(async () => {
+		console.log('Ready to sail!');
 
-	// Sets the bot"s game display message
-	client.user.setPresence({ status: 'online', game: { name: 'on the unterzee', type: 0 } });
+		// Sets the bot"s game display message
+		client.user.setPresence({ status: 'online', game: { name: 'on the unterzee', type: 0 } });
+
+		client.guilds.forEach(guild => {
+			const nameArray = await assignNamesStorage.get(guild.id);
+		});
+
+	})();
 });
 
 client.login(token);
