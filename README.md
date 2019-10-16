@@ -1,2 +1,2 @@
 # Pirate-Poet
-A multipurpose bot for FTN
+A multipurpose bot for discord servers I use.
